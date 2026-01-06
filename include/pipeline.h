@@ -1,7 +1,6 @@
 #pragma once
 
 #include "webgpu.h"
-#include "webgpu/webgpu_cpp.h"
 
 class RenderPipeline {
     public:
@@ -28,8 +27,20 @@ class RenderPipeline {
 		return m_pipeline;
 	}
 
+	inline wgpu::Texture GetDepthStencil()
+	{
+		return m_depthStencil;
+	}
+
+	inline wgpu::TextureView GetDepthStencilView()
+	{
+		return m_depthStencilView;
+	}
+
     private:
 	wgpu::BindGroupLayout m_bindGroupLayout;
 	wgpu::PipelineLayout m_layout;
 	wgpu::RenderPipeline m_pipeline;
+	wgpu::Texture m_depthStencil;
+	wgpu::TextureView m_depthStencilView;
 };

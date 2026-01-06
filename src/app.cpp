@@ -139,6 +139,9 @@ wgpu::Limits Application::GetRequiredLimits()
 	requiredLimits.maxBindGroups = 1;
 	requiredLimits.maxUniformBuffersPerShaderStage = 1;
 	requiredLimits.maxUniformBufferBindingSize = 64 * sizeof(float);
+	requiredLimits.maxTextureDimension1D = m_window.GetWidth();
+	requiredLimits.maxTextureDimension2D = m_window.GetHeight();
+	requiredLimits.maxTextureArrayLayers = 1;
 
 	requiredLimits.minUniformBufferOffsetAlignment =
 		supportedLimits.minUniformBufferOffsetAlignment;

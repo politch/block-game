@@ -158,9 +158,22 @@ class BlockGameApplication : public Application {
 			.storeOp = wgpu::StoreOp::Store,
 		};
 
+		wgpu::RenderPassDepthStencilAttachment depthStencilAttachment = {
+			.view = m_pipeline.GetDepthStencilView(),
+			.depthLoadOp = wgpu::LoadOp::Clear,
+			.depthStoreOp = wgpu::StoreOp::Store,
+			.depthClearValue = 1.0f,
+			.depthReadOnly = false,
+			.stencilLoadOp = wgpu::LoadOp::Undefined,
+			.stencilStoreOp = wgpu::StoreOp::Undefined,
+			.stencilClearValue = 0,
+			.stencilReadOnly = true,
+		};
+
 		wgpu::RenderPassDescriptor renderPassDesc = {
 			.colorAttachmentCount = 1,
 			.colorAttachments = &attachment,
+			.depthStencilAttachment = &depthStencilAttachment,
 		};
 
 		wgpu::CommandEncoder encoder = device.CreateCommandEncoder();

@@ -1,7 +1,7 @@
 #include "pipeline.h"
-#include "webgpu/webgpu_cpp.h"
-
+#include "config.h"
 #include "uniform.h"
+#include "webgpu/webgpu_cpp.h"
 
 void RenderPipeline::Create(wgpu::Device &device, const char *src,
 			    wgpu::TextureFormat format)
@@ -89,6 +89,16 @@ void RenderPipeline::Create(wgpu::Device &device, const char *src,
 		.attributes = attributes.data(),
 	};
 
+	wgpu::TextureFormat depthStencilFormat =
+		wgpu::TextureFormat::Depth24Plus;
+	wgpu::DepthStencilState depthStencilState = {
+		.format = depthStencilFormat,
+		.depthWriteEnabled = true,
+		.depthCompare = wgpu::CompareFunction::Less,
+		.stencilReadMask = 0,
+		.stencilWriteMask = 0,
+	};
+
 	wgpu::RenderPipelineDescriptor desc = {
     .layout = m_layout,
 		.vertex = {
@@ -105,7 +115,7 @@ void RenderPipeline::Create(wgpu::Device &device, const char *src,
       .frontFace = wgpu::FrontFace::CCW,
       .cullMode = wgpu::CullMode::None
     },
-    .depthStencil = nullptr,
+    .depthStencil = &depthStencilState,
     .multisample = {
       .count = 1,
       .mask = ~0u,
@@ -115,10 +125,45 @@ void RenderPipeline::Create(wgpu::Device &device, const char *src,
 	};
 
 	m_pipeline = device.CreateRenderPipeline(&desc);
+
+	auto &config = Config::Get();
+	int width = config.GetWidth();
+	int height = config.GetHeight();
+
+	wgpu::TextureDescriptor depthStencilDesc = {
+    .usage = wgpu::TextureUsage::RenderAttachment,
+    .dimension = wgpu::TextureDimension::e2D,
+    .size = {
+      .width = static_cast<uint32_t>(width),
+      .height = static_cast<uint32_t>(height),
+      .depthOrArrayLayers = 1,
+    },
+    .format = depthStencilFormat,
+    .mipLevelCount = 1,
+    .sampleCount = 1,
+    .viewFormatCount = 1,
+    .viewFormats = &depthStencilFormat,
+  };
+
+	m_depthStencil = device.CreateTexture(&depthStencilDesc);
+
+	wgpu::TextureViewDescriptor depthStencilViewDesc = {
+		.format = depthStencilFormat,
+		.dimension = wgpu::TextureViewDimension::e2D,
+		.baseMipLevel = 0,
+		.mipLevelCount = 1,
+		.baseArrayLayer = 0,
+		.arrayLayerCount = 1,
+		.aspect = wgpu::TextureAspect::DepthOnly,
+	};
+
+	m_depthStencilView = m_depthStencil.CreateView(&depthStencilViewDesc);
 }
 
 void RenderPipeline::Release()
 {
+	m_depthStencilView = nullptr;
+	m_depthStencil = nullptr;
 	m_pipeline = nullptr;
 	m_layout = nullptr;
 	m_bindGroupLayout = nullptr;
