@@ -10,18 +10,21 @@ struct VertexOutput {
 }
 
 struct UniformData {
-  model: mat4x4f,
-  view: mat4x4f,
   proj: mat4x4f,
-  tint: vec4f,
+  view: mat4x4f,
 }
 
-@group(0) @binding(0) var<uniform> uData: UniformData;
+struct SSBOData {
+  model: mat4x4f,
+}
+
+@group(0) @binding(0) var<uniform> uUniform: UniformData;
+@group(0) @binding(1) var<storage, read> uSSBO: SSBOData;
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
   var out: VertexOutput;
-  out.position = in.position;
+  out.position = uUniform.proj * uUniform.view * uSSBO.model * in.position;
   out.uv = in.uv;
   return out;
 }
@@ -32,5 +35,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
   
   // Gamma Correction
   let linear_color = pow(color, vec3f(2.2));
-  return vec4f(linear_color, 1.0) * uData.tint;
+  return vec4f(linear_color, 1.0);
 }

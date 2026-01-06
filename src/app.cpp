@@ -137,14 +137,21 @@ wgpu::Limits Application::GetRequiredLimits()
 	requiredLimits.maxVertexBufferArrayStride = 6 * sizeof(float);
 	requiredLimits.maxInterStageShaderVariables = 2;
 	requiredLimits.maxBindGroups = 1;
+
 	requiredLimits.maxUniformBuffersPerShaderStage = 1;
 	requiredLimits.maxUniformBufferBindingSize = 64 * sizeof(float);
+
+	requiredLimits.maxStorageBuffersPerShaderStage = 1;
+	requiredLimits.maxStorageBufferBindingSize =
+		16 * sizeof(float) * 32 * 32 * 32;
+
 	requiredLimits.maxTextureDimension1D = m_window.GetWidth();
 	requiredLimits.maxTextureDimension2D = m_window.GetHeight();
 	requiredLimits.maxTextureArrayLayers = 1;
 
 	requiredLimits.minUniformBufferOffsetAlignment =
 		supportedLimits.minUniformBufferOffsetAlignment;
+
 	requiredLimits.minStorageBufferOffsetAlignment =
 		supportedLimits.minStorageBufferOffsetAlignment;
 

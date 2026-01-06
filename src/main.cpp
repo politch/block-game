@@ -3,8 +3,9 @@
 #include "entrypoint.h"
 
 #include "pipeline.h"
-#include "uniform.h"
+#include "ssbo.h"
 
+#include "uniform.h"
 #include "webgpu/webgpu_cpp.h"
 #include <fstream>
 #include <glm/glm.hpp>
@@ -113,24 +114,34 @@ class BlockGameApplication : public Application {
 			0.1f, 100.0f);
 
 		m_uniformData.view = glm::mat4(1.0f);
-		m_uniformData.model = glm::mat4(1.0f);
-		m_uniformData.tint = glm::vec4(0.2, 1.0, 0.0, 1.0);
+		m_ssboData.model = glm::mat4(1.0f);
 
 		m_uniformBuffer = CreateBuffer(&m_uniformData,
 					       sizeof(m_uniformData),
 					       wgpu::BufferUsage::Uniform);
 
-		wgpu::BindGroupEntry binding = {
-			.binding = 0,
-			.buffer = m_uniformBuffer,
-			.offset = 0,
-			.size = sizeof(m_uniformData),
+		m_ssbo = CreateBuffer(&m_ssboData, sizeof(m_ssboData),
+				      wgpu::BufferUsage::Storage);
+
+		std::vector<wgpu::BindGroupEntry> entries = {
+			wgpu::BindGroupEntry{
+				.binding = 0,
+				.buffer = m_uniformBuffer,
+				.offset = 0,
+				.size = sizeof(m_uniformData),
+			},
+			wgpu::BindGroupEntry{
+				.binding = 1,
+				.buffer = m_ssbo,
+				.offset = 0,
+				.size = sizeof(m_ssboData),
+			}
 		};
 
 		wgpu::BindGroupDescriptor bindGroupDesc = {
 			.layout = m_pipeline.GetBindGroupLayout(),
-			.entryCount = 1,
-			.entries = &binding,
+			.entryCount = entries.size(),
+			.entries = entries.data(),
 		};
 
 		m_bindGroup = GetDevice().CreateBindGroup(&bindGroupDesc);
@@ -211,6 +222,7 @@ class BlockGameApplication : public Application {
 	{
 		m_bindGroup = nullptr;
 
+		m_ssbo = nullptr;
 		m_uniformBuffer = nullptr;
 		m_vertexBuffer = nullptr;
 
@@ -222,12 +234,16 @@ class BlockGameApplication : public Application {
 
 	wgpu::Buffer m_vertexBuffer;
 	wgpu::Buffer m_uniformBuffer;
+	wgpu::Buffer m_ssbo;
 
 	wgpu::BindGroup m_bindGroup;
-
 	UniformData m_uniformData;
+	SSBOData m_ssboData;
 
 	bool world[WORLD_SIZE][WORLD_SIZE][WORLD_SIZE];
+
+	glm::vec3 m_cameraPos;
+	float m_yaw, m_pitch;
 };
 
 std::unique_ptr<Application> CreateApplication()

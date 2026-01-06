@@ -1,24 +1,36 @@
 #include "pipeline.h"
 #include "config.h"
+
 #include "uniform.h"
-#include "webgpu/webgpu_cpp.h"
+#include "ssbo.h"
+
+#include <vector>
 
 void RenderPipeline::Create(wgpu::Device &device, const char *src,
 			    wgpu::TextureFormat format)
 {
-	wgpu::BindGroupLayoutEntry bindingLayout = {
-		.binding = 0,
-		.visibility = wgpu::ShaderStage::Vertex |
-			      wgpu::ShaderStage::Fragment,
-    .buffer = {
-      .type = wgpu::BufferBindingType::Uniform,
-      .minBindingSize = sizeof(UniformData),
+	std::vector<wgpu::BindGroupLayoutEntry> entries = {
+    wgpu::BindGroupLayoutEntry {
+      .binding = 0,
+      .visibility = wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment,
+      .buffer = {
+        .type = wgpu::BufferBindingType::Uniform,
+        .minBindingSize = sizeof(UniformData),
+      },
     },
-	};
+    wgpu::BindGroupLayoutEntry {
+      .binding = 1,
+      .visibility = wgpu::ShaderStage::Vertex,
+      .buffer = {
+        .type = wgpu::BufferBindingType::ReadOnlyStorage,
+        .minBindingSize = sizeof(SSBOData),
+      },
+    },
+  };
 
 	wgpu::BindGroupLayoutDescriptor bindGroupDesc = {
-		.entryCount = 1,
-		.entries = &bindingLayout,
+		.entryCount = entries.size(),
+		.entries = entries.data(),
 	};
 
 	m_bindGroupLayout = device.CreateBindGroupLayout(&bindGroupDesc);
