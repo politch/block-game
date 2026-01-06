@@ -9,8 +9,8 @@ export EM_CACHE="/cache"
 
 mkdir -p build
 cd build || exit
-emcmake cmake -G Ninja /src/
-ninja
+emcmake cmake -G Ninja /src/ >/out/cmake.out 2>&1
+ninja >/out/ninja.out 2>&1
 
 mkdir -p /out
 cp src/BlockGame.js /out/
