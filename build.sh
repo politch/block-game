@@ -1,6 +1,9 @@
 #!/bin/sh
 
+mkdir -p /cache
 cd /cache || exit
+
+export EM_CACHE="/cache"
 
 mkdir -p build
 cd build || exit
