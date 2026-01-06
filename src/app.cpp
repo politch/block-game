@@ -25,6 +25,8 @@ void Application::Loop()
 {
 	Update();
 	Render();
+
+	m_window.ResetInput();
 }
 
 void Application::Release()

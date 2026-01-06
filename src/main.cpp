@@ -160,6 +160,13 @@ class BlockGameApplication : public Application {
 		wgpu::Device &device = GetDevice();
 		wgpu::Surface &surface = GetSurface();
 
+		device.GetQueue().WriteBuffer(m_uniformBuffer, 0,
+					      &m_uniformData,
+					      sizeof(m_uniformData));
+
+		device.GetQueue().WriteBuffer(m_ssbo, 0, &m_ssboData,
+					      sizeof(m_ssboData));
+
 		wgpu::SurfaceTexture surfaceTexture;
 		surface.GetCurrentTexture(&surfaceTexture);
 
@@ -216,6 +223,11 @@ class BlockGameApplication : public Application {
 
 	virtual void Update() override
 	{
+		auto &window = GetWindow();
+
+		if (window.IsKeyJustPressed(GLFW_KEY_W)) {
+			LOG_INFO(Default, "Pressed W!");
+		}
 	}
 
 	virtual void Destroy() override
