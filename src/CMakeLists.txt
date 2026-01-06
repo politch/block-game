@@ -1,7 +1,4 @@
 
-FetchContent_MakeAvailable(spdlog)
-FetchContent_MakeAvailable(glm)
-
 add_executable(
   BlockGame
   "config.cpp"
