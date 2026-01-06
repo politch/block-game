@@ -27,6 +27,8 @@ class Application {
 	void Run();
 
 	wgpu::RenderPipeline CreateRenderPipeline(const char *src);
+	wgpu::Buffer CreateBuffer(void *data, size_t size,
+				  wgpu::BufferUsage usage);
 
 	inline wgpu::Instance &GetInstance()
 	{
@@ -52,6 +54,7 @@ class Application {
 	void InitWindow();
 	void InitInstance();
 	void InitAdapter();
+	wgpu::Limits GetRequiredLimits();
 	void InitDevice();
 	void InitSurface();
 

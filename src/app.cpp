@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include "config.h"
+#include "webgpu/webgpu_cpp.h"
 
 DEFINE_LOG_CATEGORY(Application);
 DEFINE_LOG_CATEGORY(WebGPU);
@@ -52,7 +53,9 @@ void Application::Release()
 
 void Application::EmscriptenLoop()
 {
+#if defined(__EMSCRIPTEN__)
 	g_instance->Loop();
+#endif
 }
 
 void Application::Run()
@@ -121,9 +124,33 @@ void Application::InitAdapter()
 	m_instance.WaitAny(future, UINT64_MAX);
 }
 
+wgpu::Limits Application::GetRequiredLimits()
+{
+	wgpu::Limits supportedLimits;
+	m_adapter.GetLimits(&supportedLimits);
+
+	wgpu::Limits requiredLimits = {};
+
+	requiredLimits.maxVertexAttributes = 2;
+	requiredLimits.maxVertexBuffers = 1;
+	requiredLimits.maxBufferSize = 6 * 6 * 6 * sizeof(float);
+	requiredLimits.maxVertexBufferArrayStride = 6 * sizeof(float);
+	requiredLimits.maxInterStageShaderVariables = 2;
+	requiredLimits.minUniformBufferOffsetAlignment =
+		supportedLimits.minUniformBufferOffsetAlignment;
+	requiredLimits.minStorageBufferOffsetAlignment =
+		supportedLimits.minStorageBufferOffsetAlignment;
+
+	return requiredLimits;
+}
+
 void Application::InitDevice()
 {
-	wgpu::DeviceDescriptor deviceDesc = {};
+	wgpu::Limits limits = GetRequiredLimits();
+	wgpu::DeviceDescriptor deviceDesc({
+		.requiredLimits = &limits,
+	});
+
 	deviceDesc.SetUncapturedErrorCallback([](const wgpu::Device &,
 						 wgpu::ErrorType errorType,
 						 wgpu::StringView message) {
@@ -132,7 +159,7 @@ void Application::InitDevice()
 	});
 
 	wgpu::Future future = m_adapter.RequestDevice(
-		nullptr, wgpu::CallbackMode::WaitAnyOnly,
+		&deviceDesc, wgpu::CallbackMode::WaitAnyOnly,
 		[this](wgpu::RequestDeviceStatus status, wgpu::Device d,
 		       wgpu::StringView message) {
 			LOG_CRITICAL_IF(
@@ -206,6 +233,26 @@ wgpu::RenderPipeline Application::CreateRenderPipeline(const char *src)
 		.targets = &colorTargetState,
 	};
 
+	std::vector<wgpu::VertexAttribute> attributes = {
+		wgpu::VertexAttribute{
+			.format = wgpu::VertexFormat::Float32x4,
+			.offset = 0,
+			.shaderLocation = 0,
+		},
+		wgpu::VertexAttribute{
+			.format = wgpu::VertexFormat::Float32x2,
+			.offset = 4 * sizeof(float),
+			.shaderLocation = 1,
+		}
+	};
+
+	wgpu::VertexBufferLayout vertexBufferLayout = {
+		.stepMode = wgpu::VertexStepMode::Vertex,
+		.arrayStride = 6 * sizeof(float),
+		.attributeCount = attributes.size(),
+		.attributes = attributes.data(),
+	};
+
 	wgpu::RenderPipelineDescriptor desc = {
     .layout = nullptr,
 		.vertex = {
@@ -213,8 +260,8 @@ wgpu::RenderPipeline Application::CreateRenderPipeline(const char *src)
       .entryPoint = "vs_main",
       .constantCount = 0,
       .constants = nullptr,
-      .bufferCount = 0,
-      .buffers = nullptr,
+      .bufferCount = 1,
+      .buffers = &vertexBufferLayout,
     },
 		.primitive = {
       .topology = wgpu::PrimitiveTopology::TriangleList,
@@ -232,4 +279,18 @@ wgpu::RenderPipeline Application::CreateRenderPipeline(const char *src)
 	};
 
 	return m_device.CreateRenderPipeline(&desc);
+}
+
+wgpu::Buffer Application::CreateBuffer(void *data, size_t size,
+				       wgpu::BufferUsage usage)
+{
+	wgpu::BufferDescriptor desc = {
+		.usage = wgpu::BufferUsage::CopyDst | usage,
+		.size = size,
+		.mappedAtCreation = false,
+	};
+
+	wgpu::Buffer buffer = m_device.CreateBuffer(&desc);
+	m_device.GetQueue().WriteBuffer(buffer, 0, data, size);
+	return buffer;
 }
