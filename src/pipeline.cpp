@@ -24,6 +24,7 @@ void RenderPipeline::Create(wgpu::Device &device, const char *src,
       .visibility = wgpu::ShaderStage::Vertex,
       .buffer = {
         .type = wgpu::BufferBindingType::ReadOnlyStorage,
+        .hasDynamicOffset = true,
         .minBindingSize = sizeof(SSBOData),
       },
     },

@@ -159,9 +159,9 @@ wgpu::Limits Application::GetRequiredLimits()
 	requiredLimits.maxUniformBuffersPerShaderStage = 1;
 	requiredLimits.maxUniformBufferBindingSize = 64 * sizeof(float);
 
+	requiredLimits.maxDynamicStorageBuffersPerPipelineLayout = 1;
 	requiredLimits.maxStorageBuffersPerShaderStage = 1;
-	requiredLimits.maxStorageBufferBindingSize =
-		16 * sizeof(float) * 32 * 32 * 32;
+	requiredLimits.maxStorageBufferBindingSize = 256 * 32 * 32 * 32;
 
 	requiredLimits.maxTextureDimension1D = m_window.GetWidth();
 	requiredLimits.maxTextureDimension2D = m_window.GetHeight();
@@ -172,6 +172,8 @@ wgpu::Limits Application::GetRequiredLimits()
 
 	requiredLimits.minStorageBufferOffsetAlignment =
 		supportedLimits.minStorageBufferOffsetAlignment;
+
+	m_minSSBOStride = supportedLimits.minStorageBufferOffsetAlignment;
 
 	return requiredLimits;
 }
@@ -234,6 +236,10 @@ wgpu::Buffer Application::CreateBuffer(void *data, size_t size,
 	};
 
 	wgpu::Buffer buffer = m_device.CreateBuffer(&desc);
-	m_device.GetQueue().WriteBuffer(buffer, 0, data, size);
+
+	if (data != nullptr) {
+		m_device.GetQueue().WriteBuffer(buffer, 0, data, size);
+	}
+
 	return buffer;
 }

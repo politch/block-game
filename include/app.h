@@ -59,6 +59,11 @@ class Application {
 		return m_format;
 	}
 
+	inline uint64_t GetMinSSBOStride()
+	{
+		return m_minSSBOStride;
+	}
+
     private:
 	void InitWindow();
 	void InitInstance();
@@ -80,4 +85,5 @@ class Application {
 	wgpu::Device m_device;
 	wgpu::Surface m_surface;
 	wgpu::TextureFormat m_format;
+	uint64_t m_minSSBOStride;
 };

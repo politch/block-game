@@ -102,6 +102,18 @@ class BlockGameApplication : public Application {
 		return str;
 	}
 
+	int GetBlockIdx(int x, int y, int z)
+	{
+		return z + WORLD_SIZE * (y + WORLD_SIZE * x);
+	}
+
+	uint32_t GetSSBOElementSize()
+	{
+		uint32_t minSSBOStride = GetMinSSBOStride();
+		return (sizeof(SSBOData) + minSSBOStride - 1) / minSSBOStride *
+		       minSSBOStride;
+	}
+
 	virtual void Init() override
 	{
 		std::string code = LoadSource("./assets/shader.wgsl");
@@ -119,14 +131,40 @@ class BlockGameApplication : public Application {
 			0.1f, 100.0f);
 
 		m_uniformData.view = glm::mat4(1.0f);
-		m_ssboData.model = glm::mat4(1.0f);
 
 		m_uniformBuffer = CreateBuffer(&m_uniformData,
 					       sizeof(m_uniformData),
 					       wgpu::BufferUsage::Uniform);
 
-		m_ssbo = CreateBuffer(&m_ssboData, sizeof(m_ssboData),
+		uint32_t ssboElementSize = GetSSBOElementSize();
+
+		m_ssbo = CreateBuffer(nullptr,
+				      ssboElementSize * WORLD_SIZE *
+					      WORLD_SIZE * WORLD_SIZE,
 				      wgpu::BufferUsage::Storage);
+
+		for (int x = 0; x < WORLD_SIZE; x++) {
+			for (int y = 0; y < WORLD_SIZE; y++) {
+				for (int z = 0; z < WORLD_SIZE; z++) {
+					int idx = GetBlockIdx(x, y, z);
+
+					SSBOData data;
+
+					data.model = glm::translate(
+						glm::mat4(1.0f),
+						glm::vec3(x, y, z) -
+							glm::vec3(WORLD_SIZE /
+									  2.0f,
+								  4,
+								  WORLD_SIZE /
+									  2.0f));
+
+					GetDevice().GetQueue().WriteBuffer(
+						m_ssbo, ssboElementSize * idx,
+						&data, sizeof(data));
+				}
+			}
+		}
 
 		stbi_set_flip_vertically_on_load(true);
 
@@ -150,7 +188,7 @@ class BlockGameApplication : public Application {
 				.binding = 1,
 				.buffer = m_ssbo,
 				.offset = 0,
-				.size = sizeof(m_ssboData),
+				.size = sizeof(SSBOData),
 			},
 			wgpu::BindGroupEntry{
 				.binding = 2,
@@ -169,7 +207,7 @@ class BlockGameApplication : public Application {
 		for (int x = 0; x < WORLD_SIZE; x++) {
 			for (int y = 0; y < WORLD_SIZE; y++) {
 				for (int z = 0; z < WORLD_SIZE; z++) {
-					world[x][y][z] = (y < WORLD_SIZE / 2);
+					world[x][y][z] = (y < 3);
 				}
 			}
 		}
@@ -184,9 +222,6 @@ class BlockGameApplication : public Application {
 					      &m_uniformData,
 					      sizeof(m_uniformData));
 
-		device.GetQueue().WriteBuffer(m_ssbo, 0, &m_ssboData,
-					      sizeof(m_ssboData));
-
 		wgpu::SurfaceTexture surfaceTexture;
 		surface.GetCurrentTexture(&surfaceTexture);
 
@@ -194,6 +229,12 @@ class BlockGameApplication : public Application {
 			.view = surfaceTexture.texture.CreateView(),
 			.loadOp = wgpu::LoadOp::Clear,
 			.storeOp = wgpu::StoreOp::Store,
+      .clearValue = {
+        .r = 110 / 255.0f,
+        .g = 117 / 255.0f,
+        .b = 255 / 255.0f,
+        .a = 1.0f,
+      },
 		};
 
 		wgpu::RenderPassDepthStencilAttachment depthStencilAttachment = {
@@ -221,19 +262,23 @@ class BlockGameApplication : public Application {
 		pass.SetPipeline(m_pipeline.GetPipeline());
 		pass.SetVertexBuffer(0, m_vertexBuffer);
 
-		pass.SetBindGroup(0, m_bindGroup, 0, nullptr);
-
-		pass.Draw(6 * 6);
-
-		/*for (int x = 0; x < WORLD_SIZE; x++) {
+		for (int x = 0; x < WORLD_SIZE; x++) {
 			for (int y = 0; y < WORLD_SIZE; y++) {
 				for (int z = 0; z < WORLD_SIZE; z++) {
 					if (world[x][y][z]) {
+						uint32_t offset =
+							GetBlockIdx(x, y, z) *
+							GetSSBOElementSize();
+
+						pass.SetBindGroup(0,
+								  m_bindGroup,
+								  1, &offset);
+
 						pass.Draw(6 * 6);
 					}
 				}
 			}
-		}*/
+		}
 
 		pass.End();
 
@@ -344,7 +389,6 @@ class BlockGameApplication : public Application {
 
 	wgpu::BindGroup m_bindGroup;
 	UniformData m_uniformData;
-	SSBOData m_ssboData;
 
 	bool world[WORLD_SIZE][WORLD_SIZE][WORLD_SIZE];
 
