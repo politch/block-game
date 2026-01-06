@@ -2,8 +2,9 @@
 
 #include "logger.h"
 
-#include <GLFW/glfw3.h>
 #include <sstream>
+
+#include <GLFW/glfw3.h>
 #include <webgpu/webgpu_glfw.h>
 
 #if defined(__EMSCRIPTEN__)
