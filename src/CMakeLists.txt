@@ -15,7 +15,7 @@ add_executable(
 )
 
 target_include_directories(BlockGame PRIVATE "../include/")
-target_link_libraries(BlockGame PRIVATE spdlog glm::glm stb_image glfw)
+target_link_libraries(BlockGame PRIVATE spdlog glm::glm stb_image)
 
 if(EMSCRIPTEN)
   set_target_properties(BlockGame PROPERTIES SUFFIX ".html")
