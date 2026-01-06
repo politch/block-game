@@ -18,11 +18,12 @@ target_include_directories(BlockGame PRIVATE "../include/")
 target_link_libraries(BlockGame PRIVATE spdlog glm::glm stb_image)
 
 if(EMSCRIPTEN)
+  target_link_libraries(BlockGame PRIVATE webgpu_glfw)
   set_target_properties(BlockGame PROPERTIES SUFFIX ".html")
-  target_link_libraries(BlockGame PRIVATE emdawnwebgpu_cpp webgpu_glfw)
   target_link_options(
     BlockGame PRIVATE
     "-sASYNCIFY=1"
+    "--use-port=emdawnwebgpu"
     "-sUSE_GLFW=3"
     "--preload-file"
     "${CMAKE_CURRENT_SOURCE_DIR}/../assets@assets"
