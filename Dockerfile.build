@@ -5,6 +5,8 @@ RUN apt-get update && apt-get install -y \
     cmake \
     ninja-build
 
+RUN emcc --use-port=emdawnwebgpu --version
+
 WORKDIR /src
 
 COPY . .
