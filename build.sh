@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 mkdir -p /cache
 cd /cache || exit
 
