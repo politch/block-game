@@ -20,6 +20,7 @@ struct SSBOData {
 
 @group(0) @binding(0) var<uniform> uUniform: UniformData;
 @group(0) @binding(1) var<storage, read> uSSBO: SSBOData;
+@group(0) @binding(2) var texture: texture_2d<f32>;
 
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
@@ -31,7 +32,8 @@ fn vs_main(in: VertexInput) -> VertexOutput {
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f {
-  let color = vec3f(in.uv, 0.0);
+  let texCoords = vec2i(in.uv * vec2f(textureDimensions(texture)));
+  let color = textureLoad(texture, texCoords, 0).rgb;
   
   // Gamma Correction
   let linear_color = pow(color, vec3f(2.2));

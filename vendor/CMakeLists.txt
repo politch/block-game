@@ -2,6 +2,8 @@
 set(DAWN_FETCH_DEPENDENCIES ON)
 add_subdirectory("dawn" EXCLUDE_FROM_ALL)
 
+add_subdirectory(stb_image)
+
 include(FetchContent)
 
 FetchContent_Declare(

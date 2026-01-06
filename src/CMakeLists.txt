@@ -12,12 +12,13 @@ add_executable(
   "app.cpp"
 
   "pipeline.cpp"
+  "texture.cpp"
 
   "main.cpp"
 )
 
 target_include_directories(BlockGame PRIVATE "../include/")
-target_link_libraries(BlockGame PRIVATE spdlog glm::glm)
+target_link_libraries(BlockGame PRIVATE spdlog glm::glm stb_image)
 
 if(EMSCRIPTEN)
   set_target_properties(BlockGame PROPERTIES SUFFIX ".html")
@@ -32,4 +33,5 @@ if(EMSCRIPTEN)
 else()
   target_link_libraries(BlockGame PRIVATE webgpu_dawn webgpu_glfw glfw)
   configure_file("../assets/shader.wgsl" "${CMAKE_CURRENT_BINARY_DIR}/assets/shader.wgsl" COPYONLY)
+  configure_file("../assets/cobblestone.png" "${CMAKE_CURRENT_BINARY_DIR}/assets/cobblestone.png" COPYONLY)
 endif()

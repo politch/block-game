@@ -4,6 +4,7 @@
 #include "uniform.h"
 #include "ssbo.h"
 
+#include "webgpu/webgpu_cpp.h"
 #include <vector>
 
 void RenderPipeline::Create(wgpu::Device &device, const char *src,
@@ -26,6 +27,14 @@ void RenderPipeline::Create(wgpu::Device &device, const char *src,
         .minBindingSize = sizeof(SSBOData),
       },
     },
+    wgpu::BindGroupLayoutEntry {
+      .binding = 2,
+      .visibility = wgpu::ShaderStage::Fragment,
+      .texture = {
+        .sampleType = wgpu::TextureSampleType::Float,
+        .viewDimension = wgpu::TextureViewDimension::e2D,
+      },
+    }
   };
 
 	wgpu::BindGroupLayoutDescriptor bindGroupDesc = {

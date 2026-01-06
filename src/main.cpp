@@ -2,9 +2,9 @@
 #include "config.h"
 #include "entrypoint.h"
 
-#include "glm/ext/quaternion_geometric.hpp"
 #include "pipeline.h"
 #include "ssbo.h"
+#include "texture.h"
 #include "uniform.h"
 
 #include <algorithm>
@@ -13,6 +13,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
+
+#include <stb_image.h>
 
 #define WORLD_SIZE 32
 
@@ -126,6 +128,17 @@ class BlockGameApplication : public Application {
 		m_ssbo = CreateBuffer(&m_ssboData, sizeof(m_ssboData),
 				      wgpu::BufferUsage::Storage);
 
+		stbi_set_flip_vertically_on_load(true);
+
+		int image_width, image_height, image_channels;
+		unsigned char *image = stbi_load("./assets/cobblestone.png",
+						 &image_width, &image_height,
+						 &image_channels, 0);
+
+		m_texture.Create(GetDevice(), image, image_width, image_height);
+
+		stbi_image_free(image);
+
 		std::vector<wgpu::BindGroupEntry> entries = {
 			wgpu::BindGroupEntry{
 				.binding = 0,
@@ -138,6 +151,10 @@ class BlockGameApplication : public Application {
 				.buffer = m_ssbo,
 				.offset = 0,
 				.size = sizeof(m_ssboData),
+			},
+			wgpu::BindGroupEntry{
+				.binding = 2,
+				.textureView = m_texture.GetView(),
 			}
 		};
 
@@ -307,6 +324,8 @@ class BlockGameApplication : public Application {
 	{
 		m_bindGroup = nullptr;
 
+		m_texture.Release();
+
 		m_ssbo = nullptr;
 		m_uniformBuffer = nullptr;
 		m_vertexBuffer = nullptr;
@@ -320,6 +339,8 @@ class BlockGameApplication : public Application {
 	wgpu::Buffer m_vertexBuffer;
 	wgpu::Buffer m_uniformBuffer;
 	wgpu::Buffer m_ssbo;
+
+	Texture m_texture;
 
 	wgpu::BindGroup m_bindGroup;
 	UniformData m_uniformData;

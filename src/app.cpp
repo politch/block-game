@@ -1,7 +1,8 @@
 #include "app.h"
 
 #include "config.h"
-#include "webgpu/webgpu_cpp.h"
+
+#include <glm/glm.hpp>
 
 DEFINE_LOG_CATEGORY(Application);
 DEFINE_LOG_CATEGORY(WebGPU);
@@ -152,6 +153,8 @@ wgpu::Limits Application::GetRequiredLimits()
 	requiredLimits.maxVertexBufferArrayStride = 6 * sizeof(float);
 	requiredLimits.maxInterStageShaderVariables = 2;
 	requiredLimits.maxBindGroups = 1;
+
+	requiredLimits.maxSampledTexturesPerShaderStage = 1;
 
 	requiredLimits.maxUniformBuffersPerShaderStage = 1;
 	requiredLimits.maxUniformBufferBindingSize = 64 * sizeof(float);
