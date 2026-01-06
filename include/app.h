@@ -26,9 +26,13 @@ class Application {
 
 	void Run();
 
-	wgpu::RenderPipeline CreateRenderPipeline(const char *src);
 	wgpu::Buffer CreateBuffer(void *data, size_t size,
 				  wgpu::BufferUsage usage);
+
+	inline Window &GetWindow()
+	{
+		return m_window;
+	}
 
 	inline wgpu::Instance &GetInstance()
 	{
@@ -48,6 +52,11 @@ class Application {
 	inline wgpu::Surface &GetSurface()
 	{
 		return m_surface;
+	}
+
+	inline wgpu::TextureFormat GetSurfaceFormat()
+	{
+		return m_format;
 	}
 
     private:

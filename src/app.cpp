@@ -136,6 +136,10 @@ wgpu::Limits Application::GetRequiredLimits()
 	requiredLimits.maxBufferSize = 6 * 6 * 6 * sizeof(float);
 	requiredLimits.maxVertexBufferArrayStride = 6 * sizeof(float);
 	requiredLimits.maxInterStageShaderVariables = 2;
+	requiredLimits.maxBindGroups = 1;
+	requiredLimits.maxUniformBuffersPerShaderStage = 1;
+	requiredLimits.maxUniformBufferBindingSize = 64 * sizeof(float);
+
 	requiredLimits.minUniformBufferOffsetAlignment =
 		supportedLimits.minUniformBufferOffsetAlignment;
 	requiredLimits.minStorageBufferOffsetAlignment =
@@ -190,95 +194,6 @@ void Application::InitSurface()
 	};
 
 	m_surface.Configure(&config);
-}
-
-wgpu::RenderPipeline Application::CreateRenderPipeline(const char *src)
-{
-	wgpu::ShaderSourceWGSL wgsl({
-		.code = src,
-	});
-
-	wgpu::ShaderModuleDescriptor shaderModuleDesc = {
-		.nextInChain = &wgsl,
-	};
-
-	wgpu::ShaderModule module =
-		m_device.CreateShaderModule(&shaderModuleDesc);
-
-	wgpu::BlendState blendState = {
-    .color = {
-      .operation = wgpu::BlendOperation::Add,
-      .srcFactor = wgpu::BlendFactor::SrcAlpha,
-      .dstFactor = wgpu::BlendFactor::OneMinusSrcAlpha,
-    },
-    .alpha = {
-      .operation = wgpu::BlendOperation::Add,
-      .srcFactor = wgpu::BlendFactor::Zero,
-      .dstFactor = wgpu::BlendFactor::One,
-    },
-	};
-
-	wgpu::ColorTargetState colorTargetState = {
-		.format = m_format,
-		.blend = &blendState,
-		.writeMask = wgpu::ColorWriteMask::All,
-	};
-
-	wgpu::FragmentState fragmentState = {
-		.module = module,
-		.entryPoint = "fs_main",
-		.constantCount = 0,
-		.constants = nullptr,
-		.targetCount = 1,
-		.targets = &colorTargetState,
-	};
-
-	std::vector<wgpu::VertexAttribute> attributes = {
-		wgpu::VertexAttribute{
-			.format = wgpu::VertexFormat::Float32x4,
-			.offset = 0,
-			.shaderLocation = 0,
-		},
-		wgpu::VertexAttribute{
-			.format = wgpu::VertexFormat::Float32x2,
-			.offset = 4 * sizeof(float),
-			.shaderLocation = 1,
-		}
-	};
-
-	wgpu::VertexBufferLayout vertexBufferLayout = {
-		.stepMode = wgpu::VertexStepMode::Vertex,
-		.arrayStride = 6 * sizeof(float),
-		.attributeCount = attributes.size(),
-		.attributes = attributes.data(),
-	};
-
-	wgpu::RenderPipelineDescriptor desc = {
-    .layout = nullptr,
-		.vertex = {
-      .module = module,
-      .entryPoint = "vs_main",
-      .constantCount = 0,
-      .constants = nullptr,
-      .bufferCount = 1,
-      .buffers = &vertexBufferLayout,
-    },
-		.primitive = {
-      .topology = wgpu::PrimitiveTopology::TriangleList,
-      .stripIndexFormat = wgpu::IndexFormat::Undefined,
-      .frontFace = wgpu::FrontFace::CCW,
-      .cullMode = wgpu::CullMode::None
-    },
-    .depthStencil = nullptr,
-    .multisample = {
-      .count = 1,
-      .mask = ~0u,
-      .alphaToCoverageEnabled = false,
-    },
-    .fragment = &fragmentState,
-	};
-
-	return m_device.CreateRenderPipeline(&desc);
 }
 
 wgpu::Buffer Application::CreateBuffer(void *data, size_t size,

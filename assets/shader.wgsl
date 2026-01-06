@@ -9,6 +9,15 @@ struct VertexOutput {
   @location(0) uv: vec2f,
 }
 
+struct UniformData {
+  model: mat4x4f,
+  view: mat4x4f,
+  proj: mat4x4f,
+  tint: vec4f,
+}
+
+@group(0) @binding(0) var<uniform> uData: UniformData;
+
 @vertex
 fn vs_main(in: VertexInput) -> VertexOutput {
   var out: VertexOutput;
@@ -23,5 +32,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
   
   // Gamma Correction
   let linear_color = pow(color, vec3f(2.2));
-  return vec4f(linear_color, 1.0);
+  return vec4f(linear_color, 1.0) * uData.tint;
 }

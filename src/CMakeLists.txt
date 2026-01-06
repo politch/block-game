@@ -1,5 +1,6 @@
 
 FetchContent_MakeAvailable(spdlog)
+FetchContent_MakeAvailable(glm)
 
 add_executable(
   BlockGame
@@ -10,11 +11,13 @@ add_executable(
   "window.cpp"
   "app.cpp"
 
+  "pipeline.cpp"
+
   "main.cpp"
 )
 
 target_include_directories(BlockGame PRIVATE "../include/")
-target_link_libraries(BlockGame PRIVATE spdlog)
+target_link_libraries(BlockGame PRIVATE spdlog glm::glm)
 
 if(EMSCRIPTEN)
   set_target_properties(BlockGame PROPERTIES SUFFIX ".html")

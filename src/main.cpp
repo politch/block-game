@@ -2,7 +2,13 @@
 #include "config.h"
 #include "entrypoint.h"
 
+#include "pipeline.h"
+#include "uniform.h"
+
+#include "webgpu/webgpu_cpp.h"
 #include <fstream>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #define WORLD_SIZE 32
 
@@ -93,11 +99,41 @@ class BlockGameApplication : public Application {
 	virtual void Init() override
 	{
 		std::string code = LoadSource("./assets/shader.wgsl");
-		m_pipeline = CreateRenderPipeline(code.c_str());
+		m_pipeline.Create(GetDevice(), code.c_str(),
+				  GetSurfaceFormat());
 
 		m_vertexBuffer = CreateBuffer(vertexData.data(),
 					      vertexData.size() * sizeof(float),
 					      wgpu::BufferUsage::Vertex);
+
+		auto &window = GetWindow();
+
+		m_uniformData.proj = glm::perspective(
+			90.0f, (float)window.GetWidth() / window.GetHeight(),
+			0.1f, 100.0f);
+
+		m_uniformData.view = glm::mat4(1.0f);
+		m_uniformData.model = glm::mat4(1.0f);
+		m_uniformData.tint = glm::vec4(0.2, 1.0, 0.0, 1.0);
+
+		m_uniformBuffer = CreateBuffer(&m_uniformData,
+					       sizeof(m_uniformData),
+					       wgpu::BufferUsage::Uniform);
+
+		wgpu::BindGroupEntry binding = {
+			.binding = 0,
+			.buffer = m_uniformBuffer,
+			.offset = 0,
+			.size = sizeof(m_uniformData),
+		};
+
+		wgpu::BindGroupDescriptor bindGroupDesc = {
+			.layout = m_pipeline.GetBindGroupLayout(),
+			.entryCount = 1,
+			.entries = &binding,
+		};
+
+		m_bindGroup = GetDevice().CreateBindGroup(&bindGroupDesc);
 
 		for (int x = 0; x < WORLD_SIZE; x++) {
 			for (int y = 0; y < WORLD_SIZE; y++) {
@@ -131,8 +167,10 @@ class BlockGameApplication : public Application {
 		wgpu::RenderPassEncoder pass =
 			encoder.BeginRenderPass(&renderPassDesc);
 
-		pass.SetPipeline(m_pipeline);
+		pass.SetPipeline(m_pipeline.GetPipeline());
 		pass.SetVertexBuffer(0, m_vertexBuffer);
+
+		pass.SetBindGroup(0, m_bindGroup, 0, nullptr);
 
 		pass.Draw(6 * 6);
 
@@ -158,18 +196,23 @@ class BlockGameApplication : public Application {
 
 	virtual void Destroy() override
 	{
-		if (m_vertexBuffer) {
-			m_vertexBuffer = nullptr;
-		}
+		m_bindGroup = nullptr;
 
-		if (m_pipeline) {
-			m_pipeline = nullptr;
-		}
+		m_uniformBuffer = nullptr;
+		m_vertexBuffer = nullptr;
+
+		m_pipeline.Release();
 	}
 
     private:
-	wgpu::RenderPipeline m_pipeline;
+	RenderPipeline m_pipeline;
+
 	wgpu::Buffer m_vertexBuffer;
+	wgpu::Buffer m_uniformBuffer;
+
+	wgpu::BindGroup m_bindGroup;
+
+	UniformData m_uniformData;
 
 	bool world[WORLD_SIZE][WORLD_SIZE][WORLD_SIZE];
 };
