@@ -21,9 +21,9 @@ void Application::Create()
 	Init();
 }
 
-void Application::Loop()
+void Application::Loop(float deltaTime)
 {
-	Update();
+	Update(deltaTime);
 	Render();
 
 	m_window.ResetInput();
@@ -56,7 +56,13 @@ void Application::Release()
 void Application::EmscriptenLoop()
 {
 #if defined(__EMSCRIPTEN__)
-	g_instance->Loop();
+	static float lastTime = glfwGetTime();
+
+	float time = glfwGetTime();
+	float deltaTime = time - lastTime;
+	lastTime = time;
+
+	g_instance->Loop(deltaTime);
 #endif
 }
 
@@ -76,9 +82,16 @@ void Application::Run()
 
 	emscripten_set_main_loop(Application::EmscriptenLoop, 0, true);
 #else
+	float lastTime = glfwGetTime();
+
 	while (!m_window.ShouldClose()) {
 		Window::PollEvents();
-		Loop();
+
+		float time = glfwGetTime();
+		float deltaTime = time - lastTime;
+		lastTime = time;
+
+		Loop(deltaTime);
 		m_surface.Present();
 		m_instance.ProcessEvents();
 	}

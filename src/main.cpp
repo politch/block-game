@@ -2,14 +2,17 @@
 #include "config.h"
 #include "entrypoint.h"
 
+#include "glm/ext/quaternion_geometric.hpp"
 #include "pipeline.h"
 #include "ssbo.h"
-
 #include "uniform.h"
-#include "webgpu/webgpu_cpp.h"
+
+#include <algorithm>
 #include <fstream>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #define WORLD_SIZE 32
 
@@ -221,13 +224,83 @@ class BlockGameApplication : public Application {
 		device.GetQueue().Submit(1, &commands);
 	}
 
-	virtual void Update() override
+	virtual void Update(float deltaTime) override
 	{
 		auto &window = GetWindow();
 
-		if (window.IsKeyJustPressed(GLFW_KEY_W)) {
-			LOG_INFO(Default, "Pressed W!");
+		auto delta = window.GetCursorDelta();
+
+		m_yaw -= delta.x * m_sensitivity * deltaTime;
+		m_yaw = std::fmod(m_yaw, 360.0f);
+
+		m_pitch = std::clamp(m_pitch - delta.y * m_sensitivity *
+						       deltaTime,
+				     -89.0f, 89.0f);
+
+		glm::quat yawRotation = glm::angleAxis(
+			glm::radians(m_yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glm::quat pitchRotation = glm::angleAxis(
+			glm::radians(m_pitch), glm::vec3(1.0f, 0.0f, 0.0f));
+
+		glm::quat rotation = yawRotation * pitchRotation;
+
+		glm::vec3 movement(0.0f);
+
+		if (window.IsKeyPressed(GLFW_KEY_W)) {
+			glm::vec3 dir = rotation * glm::vec3(0.0f, 0.0f, -1.0f);
+			dir.y = 0;
+			dir = glm::normalize(dir);
+
+			movement += dir;
 		}
+
+		if (window.IsKeyPressed(GLFW_KEY_S)) {
+			glm::vec3 dir = rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+			dir.y = 0;
+			dir = glm::normalize(dir);
+
+			movement += dir;
+		}
+
+		if (window.IsKeyPressed(GLFW_KEY_A)) {
+			glm::vec3 dir = rotation * glm::vec3(-1.0f, 0.0f, 0.0f);
+			dir.y = 0;
+			dir = glm::normalize(dir);
+
+			movement += dir;
+		}
+
+		if (window.IsKeyPressed(GLFW_KEY_D)) {
+			glm::vec3 dir = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
+			dir.y = 0;
+			dir = glm::normalize(dir);
+
+			movement += dir;
+		}
+
+		if (window.IsKeyPressed(GLFW_KEY_SPACE)) {
+			movement += glm::vec3(0.0f, 1.0f, 0.0f);
+		}
+
+		if (window.IsKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+			movement += glm::vec3(0.0f, -1.0f, 0.0f);
+		}
+
+		if (glm::length(movement) > 0.0f) {
+			movement = glm::normalize(movement);
+		}
+
+		m_cameraPos += movement * m_speed * deltaTime;
+
+		glm::mat4 translationMatrix =
+			glm::translate(glm::mat4(1.0f), m_cameraPos);
+
+		glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
+
+		glm::mat4 cameraMatrix = translationMatrix * rotationMatrix;
+
+		m_uniformData.view = glm::inverse(cameraMatrix);
 	}
 
 	virtual void Destroy() override
@@ -254,8 +327,11 @@ class BlockGameApplication : public Application {
 
 	bool world[WORLD_SIZE][WORLD_SIZE][WORLD_SIZE];
 
-	glm::vec3 m_cameraPos;
+	glm::vec3 m_cameraPos = { 0.0f, 0.0f, 0.0f };
 	float m_yaw, m_pitch;
+
+	const float m_sensitivity = 20.0f;
+	const float m_speed = 5.0f;
 };
 
 std::unique_ptr<Application> CreateApplication()

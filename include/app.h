@@ -17,7 +17,7 @@ class Application {
 	virtual void Render()
 	{
 	}
-	virtual void Update()
+	virtual void Update(float deltaTime)
 	{
 	}
 	virtual void Destroy()
@@ -68,7 +68,7 @@ class Application {
 	void InitSurface();
 
 	void Create();
-	void Loop();
+	void Loop(float deltaTime);
 	void Release();
 
 	static void EmscriptenLoop();
