@@ -1,0 +1,14 @@
+FROM emscripten/emsdk:4.0.22
+
+RUN apt-get update && apt-get install -y \
+    git \
+    cmake \
+    ninja-build
+
+WORKDIR /app
+
+COPY . .
+
+RUN chmod +x build.sh
+
+CMD ["./build.sh"]
