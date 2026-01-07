@@ -284,6 +284,16 @@ public:
     return yawRotation * pitchRotation;
   }
 
+  glm::mat4 GetView() {
+    glm::quat rotation = GetRotation();
+
+    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), m_cameraPos);
+    glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
+    glm::mat4 cameraMatrix = translationMatrix * rotationMatrix;
+
+    return glm::inverse(cameraMatrix);
+  }
+
   std::optional<RayHit> ProcessRayCast(RayCast cast) {
     glm::vec3 dir = glm::normalize(cast.direction);
 
@@ -353,6 +363,36 @@ public:
   virtual void Update(float deltaTime) override {
     auto &window = GetWindow();
 
+    glm::mat4 invPV = glm::inverse(m_uniformData.proj * GetView());
+    glm::vec4 worldPos = invPV * glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
+    glm::vec3 origin = glm::vec3(worldPos) / worldPos.w;
+
+    if (window.IsButtonJustPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+      RayCast cast;
+      cast.origin = origin;
+      cast.direction = GetRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
+
+      std::optional<RayHit> hit = ProcessRayCast(cast);
+      if (hit.has_value() &&
+          glm::distance(cast.origin, glm::vec3(hit.value().hit)) <= 5.0f) {
+        RayHit value = hit.value();
+        m_world[value.hit.x][value.hit.y][value.hit.z] = 0;
+      }
+    }
+
+    if (window.IsButtonJustPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+      RayCast cast;
+      cast.origin = origin;
+      cast.direction = GetRotation() * glm::vec3(0.0f, 0.0f, -1.0f);
+
+      std::optional<RayHit> hit = ProcessRayCast(cast);
+      if (hit.has_value() &&
+          glm::distance(cast.origin, glm::vec3(hit.value().hit)) <= 5.0f) {
+        RayHit value = hit.value();
+        m_world[value.adj.x][value.adj.y][value.adj.z] = 1;
+      }
+    }
+
     auto delta = window.GetCursorDelta();
 
     m_yaw -= delta.x * m_sensitivity * deltaTime;
@@ -415,39 +455,7 @@ public:
 
     m_cameraPos += movement * m_speed * deltaTime;
 
-    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), m_cameraPos);
-
-    glm::mat4 rotationMatrix = glm::mat4_cast(rotation);
-
-    glm::mat4 cameraMatrix = translationMatrix * rotationMatrix;
-
-    m_uniformData.view = glm::inverse(cameraMatrix);
-
-    if (window.IsButtonJustPressed(GLFW_MOUSE_BUTTON_LEFT)) {
-      RayCast cast;
-      cast.origin = m_cameraPos + 0.5f * right + 0.5f * up;
-      cast.direction = forward;
-
-      std::optional<RayHit> hit = ProcessRayCast(cast);
-      if (hit.has_value() &&
-          glm::distance(cast.origin, glm::vec3(hit.value().hit)) <= 5.0f) {
-        RayHit value = hit.value();
-        m_world[value.hit.x][value.hit.y][value.hit.z] = 0;
-      }
-    }
-
-    if (window.IsButtonJustPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
-      RayCast cast;
-      cast.origin = m_cameraPos + 0.5f * right + 0.5f * up;
-      cast.direction = forward;
-
-      std::optional<RayHit> hit = ProcessRayCast(cast);
-      if (hit.has_value() &&
-          glm::distance(cast.origin, glm::vec3(hit.value().hit)) <= 5.0f) {
-        RayHit value = hit.value();
-        m_world[value.adj.x][value.adj.y][value.adj.z] = 1;
-      }
-    }
+    m_uniformData.view = GetView();
   }
 
   virtual void Destroy() override {
