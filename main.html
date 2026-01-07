@@ -30,6 +30,15 @@
   <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
 
   <script type='text/javascript'>
+    function resizeCanvas() {
+      const canvas = document.getElementById('canvas');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
     var canvasElement = document.getElementById('canvas');
 
     canvasElement.addEventListener('webglcontextlost', (e) => {
